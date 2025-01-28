@@ -3,6 +3,8 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/Hero";
 import ProductsSection from "@/components/ProductsSection";
 import HowItWorks from "@/components/HowItWorks";
+import AGXBenefits from "@/components/AGXBenefits";
+import StatsAndReferral from "@/components/StatsAndRef";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -22,6 +24,8 @@ export default function Home() {
       <HeroSection/>
       <ProductsSection/>
       <HowItWorks/>
+      <AGXBenefits/>
+      <StatsAndReferral/>
     </div>
   );
 }
