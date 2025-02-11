@@ -1,4 +1,4 @@
-import "@/styles/globals.css";
+import "../styles/globals.css";
 import '@rainbow-me/rainbowkit/styles.css';
 import { Poppins } from 'next/font/google';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

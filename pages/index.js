@@ -6,7 +6,6 @@ import HowItWorks from "@/components/HowItWorks";
 import AGXBenefits from "@/components/AGXBenefits";
 import StatsAndReferral from "@/components/StatsAndRef";
 import FAQ from "@/components/Faq";
-import { Geist, Geist_Mono } from "next/font/google";
 import Footer from "@/components/Footer";
 
 
