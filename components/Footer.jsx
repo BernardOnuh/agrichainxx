@@ -11,6 +11,7 @@ const Footer = () => {
       hoverColor: 'hover:bg-blue-600',
       label: 'Follow us on Facebook'
     },
+    
     { 
       icon: Twitter, 
       href: 'https://twitter.com/agrichainx',
