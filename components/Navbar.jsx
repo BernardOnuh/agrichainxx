@@ -69,7 +69,7 @@ const Navbar = () => {
     <header 
       className={`sticky top-0 z-50 w-full font-poppins font-bold transition-all duration-300 ${
         scrolled 
-          ? 'bg-green-500/95 backdrop-blur-lg shadow-lg' 
+          ? 'bg-green-500' // Changed to solid green background
           : 'bg-gradient-to-r from-green-500 to-green-600'
       }`}
     >
