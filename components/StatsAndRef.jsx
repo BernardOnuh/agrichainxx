@@ -178,7 +178,7 @@ const StatsAndBenefits = () => {
                   integration with blockchain.
                 </p>
                 <Link 
-                  href="/refer"
+                  href="/referral"
                   className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-600 to-green-500 
                              rounded-full font-semibold transition-all duration-300 hover:from-green-500 hover:to-green-400"
                 >
