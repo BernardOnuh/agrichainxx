@@ -1,15 +1,50 @@
 import React, { useState } from 'react';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionItemHeading,
-  AccordionItemButton,
-  AccordionItemPanel
-} from 'react-accessible-accordion';
 import { Plus, Minus } from 'lucide-react';
 
+const AccordionItem = ({ question, answer, isOpen, onClick }) => {
+  return (
+    <div className="group">
+      <div
+        onClick={onClick}
+        className="relative bg-gradient-to-r from-gray-800 to-gray-900
+                 text-white p-6 rounded-xl cursor-pointer
+                 transition-all duration-300
+                 hover:shadow-lg hover:shadow-green-500/10
+                 border border-gray-700 group-hover:border-green-500/50"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold pr-8">{question}</h3>
+          <div className="transition-transform duration-300">
+            {isOpen ? (
+              <Minus className="w-5 h-5 text-green-400" />
+            ) : (
+              <Plus className="w-5 h-5 text-green-400" />
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out
+                   ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+      >
+        <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50
+                      backdrop-blur-sm text-gray-300 p-6
+                      rounded-b-xl text-base leading-relaxed
+                      border-x border-b border-gray-700"
+        >
+          <div className="relative">
+            <div className="absolute -left-2 top-2 w-1 h-1 bg-green-500 rounded-full" />
+            <p className="pl-4">{answer}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function FAQ() {
-  const [activeIndex, setActiveIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState(null);
 
   const faqData = [
     {
@@ -47,7 +82,7 @@ function FAQ() {
   ];
 
   return (
-    <section className="relative bg-gradient-to-b from-gray-950 to-black py-20 font-poppins overflow-hidden">
+    <section className="relative bg-gradient-to-b from-gray-900 to-black py-20 font-poppins overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-96 bg-green-900/20 rounded-full 
@@ -71,58 +106,17 @@ function FAQ() {
           </p>
         </div>
         
-        <Accordion 
-          allowMultipleExpanded={false} 
-          allowZeroExpanded 
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-          onChange={(uuids) => setActiveIndex(uuids[0])}
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {faqData.map((item, index) => (
-            <AccordionItem 
-              key={index} 
-              uuid={`item-${index}`}
-              className="group"
-            >
-              <AccordionItemHeading>
-                <AccordionItemButton className="
-                  relative bg-gradient-to-r from-gray-800 to-gray-900
-                  text-white p-6 rounded-xl
-                  transition-all duration-300
-                  hover:shadow-lg hover:shadow-green-500/10
-                  flex items-center justify-between
-                  border border-gray-700 group-hover:border-green-500/50
-                  cursor-pointer
-                ">
-                  <span className="font-semibold pr-8">{item.question}</span>
-                  <div className="absolute right-6 transition-transform duration-300">
-                    {activeIndex === `item-${index}` ? (
-                      <Minus className="w-5 h-5 text-green-400" />
-                    ) : (
-                      <Plus className="w-5 h-5 text-green-400" />
-                    )}
-                  </div>
-                </AccordionItemButton>
-              </AccordionItemHeading>
-              <AccordionItemPanel className="
-                bg-gradient-to-r from-gray-800/50 to-gray-900/50
-                backdrop-blur-sm
-                text-gray-300
-                p-6
-                rounded-b-xl
-                text-base
-                leading-relaxed
-                border-x border-b border-gray-700
-                transform transition-all duration-300
-              ">
-                <div className="relative">
-                  {/* Green dot decorator */}
-                  <div className="absolute -left-2 top-2 w-1 h-1 bg-green-500 rounded-full" />
-                  <p className="pl-4">{item.answer}</p>
-                </div>
-              </AccordionItemPanel>
-            </AccordionItem>
+            <AccordionItem
+              key={index}
+              question={item.question}
+              answer={item.answer}
+              isOpen={openIndex === index}
+              onClick={() => setOpenIndex(openIndex === index ? null : index)}
+            />
           ))}
-        </Accordion>
+        </div>
 
         {/* Bottom decorator */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
