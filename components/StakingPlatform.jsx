@@ -13,6 +13,31 @@ const AGX_TO_USDT_RATIO = 1000;
 const MIN_AGX = 10000;
 const MIN_USDT = 10;
 
+const STAKING_PLANS = [
+  { usdt: 20, agx: 20000 },
+  { usdt: 50, agx: 50000 },
+  { usdt: 100, agx: 100000 },
+  { usdt: 200, agx: 200000 },
+  { usdt: 500, agx: 500000 },
+  { usdt: 1000, agx: 1000000 }
+];
+
+const StakingPlan = ({ plan, onSelect, isSelected }) => {
+  return (
+    <button
+      onClick={() => onSelect(plan)}
+      className={`w-full p-4 rounded-xl transition-all ${
+        isSelected 
+          ? 'bg-green-500 text-white' 
+          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+      }`}
+    >
+      <div className="text-lg font-semibold">${plan.usdt} USDT</div>
+      <div className="text-sm opacity-80">{plan.agx.toLocaleString()} AGX</div>
+    </button>
+  );
+};
+
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
 
@@ -59,6 +84,7 @@ const CustomAlert = ({ title, children, type = 'info' }) => {
 };
 
 const StakingPlatform = () => {
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const { address } = useAccount();
   const searchParams = useSearchParams();
@@ -80,6 +106,12 @@ const StakingPlatform = () => {
   const [agxApprovalHash, setAgxApprovalHash] = useState(null);
   const [usdtApprovalHash, setUsdtApprovalHash] = useState(null);
   const [stakeHash, setStakeHash] = useState(null);
+
+  useEffect(() => {
+    if (selectedPlan) {
+      setAgxAmount(selectedPlan.agx.toString());
+    }
+  }, [selectedPlan]);
 
   // Wait for transaction receipts
   const { data: agxApprovalReceipt, isSuccess: isAgxApprovalSuccess } = useWaitForTransactionReceipt({
@@ -167,11 +199,16 @@ const StakingPlatform = () => {
     watch: true,
   });
 
-  // Contract writes
+  const [transactionStep, setTransactionStep] = useState('initial'); // 'initial', 'approving_agx', 'approving_usdt', 'staking'
+
   const { writeContract: approveUSDT, isPending: isApprovingUSDT } = useWriteContract();
   const { writeContract: approveAGX, isPending: isApprovingAGX } = useWriteContract();
   const { writeContract: stake, isPending: isStaking } = useWriteContract();
   const { writeContract: claimRewards, isPending: isClaiming } = useWriteContract();
+
+  useEffect(() => {
+    setTransactionStep('initial');
+  }, [selectedPlan]);
 
   // Update staked details when data changes
   useEffect(() => {
@@ -183,13 +220,26 @@ const StakingPlatform = () => {
         pendingRewards: stakeDetails[3],
         active: stakeDetails[4],
         totalReferrals: userStakes[1],
-        totalCommission: userStakes[2]
+        totalCommission: userStakes[2],
+        lastClaimTime: stakeDetails[5] || stakeDetails[2] // Add lastClaimTime tracking
       });
 
-      // Update next claim time based on start time and claim delay
-      const nextClaimTimestamp = Number(stakeDetails[2]) + (6 * 24 * 60 * 60); // 6 days claim delay
-      setNextClaimTime(nextClaimTimestamp * 1000); // Convert to milliseconds
-      setCanClaim(Date.now() >= nextClaimTimestamp * 1000);
+      const startTimestamp = Number(stakeDetails[2]);
+      const lastClaimTimestamp = Number(stakeDetails[5] || stakeDetails[2]);
+      const now = Math.floor(Date.now() / 1000);
+      
+      // Check if this is the first claim (6-day delay) or subsequent claims (daily)
+      if (lastClaimTimestamp === startTimestamp) {
+        // First claim - apply 6-day delay
+        const firstClaimTime = startTimestamp + (6 * 24 * 60 * 60);
+        setNextClaimTime(firstClaimTime * 1000);
+        setCanClaim(now >= firstClaimTime);
+      } else {
+        // Subsequent claims - daily interval
+        const nextDailyClaimTime = lastClaimTimestamp + (24 * 60 * 60);
+        setNextClaimTime(nextDailyClaimTime * 1000);
+        setCanClaim(now >= nextDailyClaimTime);
+      }
     }
   }, [stakeDetails, userStakes]);
 
@@ -218,21 +268,10 @@ const StakingPlatform = () => {
 
   // Validate minimum staking amounts
   const validateAmounts = () => {
-    if (!agxAmount || isNaN(agxAmount) || !usdtEquivalent || isNaN(usdtEquivalent)) {
-      setError('Please enter a valid amount');
+    if (!selectedPlan) {
+      setError('Please select a staking plan');
       return false;
     }
-
-    if (parseFloat(agxAmount) < MIN_AGX) {
-      setError(`Minimum AGX to stake is ${MIN_AGX}`);
-      return false;
-    }
-
-    if (parseFloat(usdtEquivalent) < MIN_USDT) {
-      setError(`Minimum USDT to stake is ${MIN_USDT}`);
-      return false;
-    }
-
     return true;
   };
 
@@ -346,25 +385,94 @@ const StakingPlatform = () => {
     alert('Referral link copied to clipboard!');
   };
 
+  const continueTransaction = async () => {
+    if (!validateAmounts()) return;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const usdtAmountToApprove = parseEther(selectedPlan.usdt.toString());
+      const agxAmountToApprove = parseEther(selectedPlan.agx.toString());
+
+      // Determine where to continue from
+      if (!approvalStatus.agx && transactionStep === 'initial') {
+        setTransactionStep('approving_agx');
+        await approveAGX({
+          address: AGX_ADDRESS,
+          abi: erc20ABI,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESS, agxAmountToApprove],
+        });
+      }
+
+      if (!approvalStatus.usdt && (transactionStep === 'initial' || transactionStep === 'approving_agx')) {
+        setTransactionStep('approving_usdt');
+        await approveUSDT({
+          address: USDT_ADDRESS,
+          abi: erc20ABI,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESS, usdtAmountToApprove],
+        });
+      }
+
+      if (approvalStatus.agx && approvalStatus.usdt || transactionStep === 'staking') {
+        setTransactionStep('staking');
+        await stake({
+          address: CONTRACT_ADDRESS,
+          abi: stakingABI,
+          functionName: 'stake',
+          args: [parseEther(selectedPlan.usdt.toString()), referrerAddress],
+        });
+      }
+
+    } catch (err) {
+      console.error('Transaction error:', err);
+      setError(err.message || 'Transaction failed');
+      // Don't reset transaction step on error to allow retrying from the same point
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getButtonText = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+        </div>
+      );
+    }
+
+    if (isApprovingAGX || transactionStep === 'approving_agx') return 'Approving AGX...';
+    if (isApprovingUSDT || transactionStep === 'approving_usdt') return 'Approving USDT...';
+    if (isStaking || transactionStep === 'staking') return 'Staking...';
+    
+    if (!approvalStatus.agx) return 'Approve AGX';
+    if (!approvalStatus.usdt) return 'Approve USDT';
+    return 'Stake';
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black font-poppins">
       <CustomAlert title="Welcome to AGX/USDT Staking">
         Earn 2% daily rewards over 150 days. Stake your AGX tokens with USDT to earn USDT rewards.
-        Minimum stake: {MIN_AGX} AGX with ${MIN_USDT} USDT equivalent
+        Select a staking plan to begin earning rewards.
       </CustomAlert>
-
+  
       {error && (
         <CustomAlert title="Error" type="error">
           {error}
         </CustomAlert>
       )}
-
+  
       {isStakingSuccess && (
         <CustomAlert title="Success" type="success">
           Congratulations! You've successfully staked your tokens.
         </CustomAlert>
       )}
-
+  
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         <div className="text-white">
           <h2 className="text-xl font-bold mb-4">Staking Rewards Information</h2>
@@ -375,39 +483,31 @@ const StakingPlatform = () => {
               </h3>
               <p className="text-gray-300">Earn 2% of your staked amount daily in USDT rewards.</p>
             </div>
-
+  
             <div className="bg-gray-800 p-4 rounded-lg">
               <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" /> Reward Period
               </h3>
               <p className="text-gray-300">Program runs for 150 days, allowing you to earn back your full investment plus additional rewards.</p>
             </div>
-
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
-                <Gift className="w-4 h-4" /> Total Return
-              </h3>
-              <p className="text-gray-300">Over the 150-day period, you can earn up to 300% of your initial stake.</p>
-            </div>
-
+  
             <div className="bg-gray-800 p-4 rounded-lg">
               <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> Claim Schedule
               </h3>
-              <p className="text-gray-300">Rewards can be claimed 6 days after initial stake,Then accumulating and claiming daily at 2% daily.</p>
+              <p className="text-gray-300">First claim available after 6 days, then daily claims thereafter.</p>
             </div>
           </div>
         </div>
       </Modal>
-
+  
       <div className="container mx-auto px-4 py-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Staking Card */}
           <div className="lg:col-span-2">
             <div className="bg-gray-900 rounded-3xl p-6 md:p-8 border border-gray-800">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold text-white">Stake AGX/USDT</h2>
+                  <h2 className="text-2xl font-bold text-white">Select Staking Plan</h2>
                   <button 
                     onClick={() => setIsInfoModalOpen(true)}
                     className="bg-green-500/10 hover:bg-green-500/20 text-green-500 p-2 rounded-full transition-colors"
@@ -422,63 +522,55 @@ const StakingPlatform = () => {
                   </p>
                 </div>
               </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <input
-                    type="number"
-                    value={agxAmount}
-                    onChange={handleAgxInputChange}
-                    placeholder={`Enter 10,000 AGX or Greater (Min: ${MIN_AGX} AGX)`}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+  
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                {STAKING_PLANS.map((plan) => (
+                  <StakingPlan
+                    key={plan.usdt}
+                    plan={plan}
+                    onSelect={setSelectedPlan}
+                    isSelected={selectedPlan?.usdt === plan.usdt}
                   />
-                  
-                  <div className="flex items-center justify-center">
-                    <ArrowDown className="text-gray-500 my-2" />
-                  </div>
-                  
+                ))}
+              </div>
+  
+              {selectedPlan && (
+                <div className="space-y-6">
                   <div className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">USDT Equivalent:</span>
-                      <span className="font-semibold">{usdtEquivalent} USDT</span>
+                      <span className="text-gray-400">Selected Plan:</span>
+                      <span className="font-semibold">${selectedPlan.usdt} USDT / {selectedPlan.agx.toLocaleString()} AGX</span>
                     </div>
                   </div>
-                </div>
-
-                {referrerAddress !== '0x0000000000000000000000000000000000000000' && (
-                  <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
-                    <p className="text-gray-400">Referrer:</p>
-                    <p className="text-white truncate">{referrerAddress}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleApproveAndStake}
-                    disabled={loading || isApprovingUSDT || isApprovingAGX || isStaking || !agxAmount || isNaN(agxAmount)}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
-                  >
-                    {isApproving ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      </div>
-                    ) : isApprovingUSDT || isApprovingAGX ? 'Approving...' : 
-                       isStaking ? 'Staking...' : 
-                       approvalStatus.usdt && approvalStatus.agx ? 'Stake' : 'Approve '}
-                  </button>
-                  <button
-                    onClick={handleClaim}
-                    disabled={loading || isClaiming || !canClaim}
-                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
-                  >
-                    {getClaimButtonText()}
-                  </button>
-                </div>
+  
+                  {referrerAddress !== '0x0000000000000000000000000000000000000000' && (
+                    <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
+                      <p className="text-gray-400">Referrer:</p>
+                      <p className="text-white truncate">{referrerAddress}</p>
+                    </div>
+                  )}
+  
+                 <div className="flex gap-4">
+                <button
+                  onClick={continueTransaction}
+                  disabled={loading || isApprovingUSDT || isApprovingAGX || isStaking || !selectedPlan}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {getButtonText()}
+                </button>
+                <button
+                  onClick={handleClaim}
+                  disabled={loading || isClaiming || !canClaim}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {getClaimButtonText()}
+                </button>
               </div>
             </div>
+              )}
+            </div>
           </div>
-
-          {/* Stats Cards */}
+  
           <div className="space-y-6">
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
@@ -491,19 +583,19 @@ const StakingPlatform = () => {
                 <Lock className="text-green-500" />
               </div>
             </div>
-
+  
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 mb-2">Pending Rewards</p>
                   <p className="text-2xl font-bold text-white">
-                  ${pendingRewards ? formatEther(pendingRewards) : '0.00'}
+                    ${pendingRewards ? formatEther(pendingRewards) : '0.00'}
                   </p>
                 </div>
                 <Gift className="text-green-500" />
               </div>
             </div>
-
+  
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
@@ -515,7 +607,7 @@ const StakingPlatform = () => {
                 <Clock className="text-green-500" />
               </div>
             </div>
-
+  
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
@@ -527,8 +619,7 @@ const StakingPlatform = () => {
                 <Users className="text-green-500" />
               </div>
             </div>
-
-            {/* Referral Link Section */}
+  
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
