@@ -13,7 +13,7 @@ export default function ReferralPage() {
   useEffect(() => {
     // Generate referral link only on client-side
     if (typeof window !== 'undefined' && address) {
-      setReferralLink(`${window.location.origin}?ref=${address}`);
+      setReferralLink(`${window.location.origin}/staking?ref=${address}`);
     }
   }, [address]);
 

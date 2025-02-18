@@ -13,13 +13,14 @@ const AGX_TO_USDT_RATIO = 1000;
 const MIN_AGX = 10000;
 const MIN_USDT = 10;
 
+// Updated staking plans with display and actual values
 const STAKING_PLANS = [
-  { usdt: 20, agx: 20000 },
-  { usdt: 50, agx: 50000 },
-  { usdt: 100, agx: 100000 },
-  { usdt: 200, agx: 200000 },
-  { usdt: 500, agx: 500000 },
-  { usdt: 1000, agx: 1000000 }
+  { display: { usdt: 20, agx: 20000 }, actual: { usdt: 10, agx: 10000 } },
+  { display: { usdt: 50, agx: 50000 }, actual: { usdt: 25, agx: 25000 } },
+  { display: { usdt: 100, agx: 100000 }, actual: { usdt: 50, agx: 50000 } },
+  { display: { usdt: 200, agx: 200000 }, actual: { usdt: 100, agx: 100000 } },
+  { display: { usdt: 500, agx: 500000 }, actual: { usdt: 250, agx: 250000 } },
+  { display: { usdt: 1000, agx: 1000000 }, actual: { usdt: 500, agx: 500000 } }
 ];
 
 const StakingPlan = ({ plan, onSelect, isSelected }) => {
@@ -32,8 +33,8 @@ const StakingPlan = ({ plan, onSelect, isSelected }) => {
           : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
       }`}
     >
-      <div className="text-lg font-semibold">${plan.usdt} USDT</div>
-      <div className="text-sm opacity-80">{plan.agx.toLocaleString()} AGX</div>
+      <div className="text-lg font-semibold">${plan.display.usdt} USDT</div>
+      <div className="text-sm opacity-80">{plan.display.agx.toLocaleString()} AGX</div>
     </button>
   );
 };
@@ -109,7 +110,7 @@ const StakingPlatform = () => {
 
   useEffect(() => {
     if (selectedPlan) {
-      setAgxAmount(selectedPlan.agx.toString());
+      setAgxAmount(selectedPlan.actual.agx.toString());
     }
   }, [selectedPlan]);
 
@@ -283,8 +284,8 @@ const StakingPlatform = () => {
       setError('');
       setIsApproving(true);
 
-      const usdtAmountToApprove = parseEther(usdtEquivalent);
-      const agxAmountToApprove = parseEther(agxAmount);
+      const usdtAmountToApprove = parseEther(selectedPlan.actual.usdt.toString());
+      const agxAmountToApprove = parseEther(selectedPlan.actual.agx.toString());
 
       // Approve AGX if needed
       if (!approvalStatus.agx) {
@@ -378,7 +379,7 @@ const StakingPlatform = () => {
   };
 
   // Generate referral link
-  const referralLink = `${window.location.origin}?ref=${address}`;
+  const referralLink = `${window.location.origin}/staking?ref=${address}`;
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -387,15 +388,15 @@ const StakingPlatform = () => {
 
   const continueTransaction = async () => {
     if (!validateAmounts()) return;
-
+  
     try {
       setLoading(true);
       setError('');
-
-      const usdtAmountToApprove = parseEther(selectedPlan.usdt.toString());
-      const agxAmountToApprove = parseEther(selectedPlan.agx.toString());
-
-      // Determine where to continue from
+  
+      const usdtAmountToApprove = parseEther(selectedPlan.actual.usdt.toString());
+      const agxAmountToApprove = parseEther(selectedPlan.actual.agx.toString());
+  
+      // Rest of the transaction logic remains the same, but use actual values
       if (!approvalStatus.agx && transactionStep === 'initial') {
         setTransactionStep('approving_agx');
         await approveAGX({
@@ -405,7 +406,7 @@ const StakingPlatform = () => {
           args: [CONTRACT_ADDRESS, agxAmountToApprove],
         });
       }
-
+  
       if (!approvalStatus.usdt && (transactionStep === 'initial' || transactionStep === 'approving_agx')) {
         setTransactionStep('approving_usdt');
         await approveUSDT({
@@ -415,21 +416,20 @@ const StakingPlatform = () => {
           args: [CONTRACT_ADDRESS, usdtAmountToApprove],
         });
       }
-
+  
       if (approvalStatus.agx && approvalStatus.usdt || transactionStep === 'staking') {
         setTransactionStep('staking');
         await stake({
           address: CONTRACT_ADDRESS,
           abi: stakingABI,
           functionName: 'stake',
-          args: [parseEther(selectedPlan.usdt.toString()), referrerAddress],
+          args: [parseEther(selectedPlan.actual.usdt.toString()), referrerAddress],
         });
       }
 
     } catch (err) {
       console.error('Transaction error:', err);
       setError(err.message || 'Transaction failed');
-      // Don't reset transaction step on error to allow retrying from the same point
     } finally {
       setLoading(false);
     }
@@ -535,14 +535,15 @@ const StakingPlatform = () => {
               </div>
   
               {selectedPlan && (
-                <div className="space-y-6">
-                  <div className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Selected Plan:</span>
-                      <span className="font-semibold">${selectedPlan.usdt} USDT / {selectedPlan.agx.toLocaleString()} AGX</span>
-                    </div>
-                  </div>
-  
+               <div className="space-y-6">
+               <div className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white">
+                 <div className="flex justify-between items-center">
+                   <span className="text-gray-400">Selected Plan:</span>
+                   <span className="font-semibold">
+                     ${selectedPlan.actual.usdt} USDT / {selectedPlan.actual.agx.toLocaleString()} AGX
+                   </span>
+                 </div>
+               </div>
                   {referrerAddress !== '0x0000000000000000000000000000000000000000' && (
                     <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
                       <p className="text-gray-400">Referrer:</p>
