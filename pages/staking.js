@@ -1,16 +1,23 @@
-import Image from "next/image";
+// pages/staking.js
+import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Navbar from "@/components/Navbar";
-import StakingPlatform from "@/components/StakingPlatform";
 import Footer from "@/components/Footer";
 
+// Dynamically import StakingPlatform with SSR disabled
+const StakingPlatform = dynamic(
+  () => import('../components/StakingPlatform'),
+  { ssr: false }
+);
 
-
-export default function Home() {
+const StakingPage = () => {
   return (
     <div>
-      <Navbar/>
-        <StakingPlatform/>
-      <Footer/>
+      <Navbar />
+      <StakingPlatform />
+      <Footer />
     </div>
   );
-}
+};
+
+export default StakingPage;

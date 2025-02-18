@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
+import { useAccount } from 'wagmi'
 import Footer from "@/components/Footer";
 import { Users, Copy, Share2, Gift, TrendingUp, ArrowRight } from 'lucide-react';
 
 export default function ReferralPage() {
+  const { address } = useAccount();
   const [copied, setCopied] = useState(false);
-  const referralLink = "https://agrichainx.com/ref/YOUR_ID"; // Replace with actual referral link
+  const referralLink = `${window.location.origin}?ref=${address}`; // Replace with actual referral link
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
