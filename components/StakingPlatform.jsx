@@ -394,7 +394,7 @@ const StakingPlatform = () => {
               <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> Claim Schedule
               </h3>
-              <p className="text-gray-300">Rewards can be claimed every 6 days, accumulating at 2% daily.</p>
+              <p className="text-gray-300">Rewards can be claimed every 6 days after initial stake,Then accumulating and claiming daily at 2% daily.</p>
             </div>
           </div>
         </div>
