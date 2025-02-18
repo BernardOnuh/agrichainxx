@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import { useAccount } from 'wagmi'
+import { useAccount } from 'wagmi';
 import Footer from "@/components/Footer";
 import { Users, Copy, Share2, Gift, TrendingUp, ArrowRight } from 'lucide-react';
 
 export default function ReferralPage() {
   const { address } = useAccount();
   const [copied, setCopied] = useState(false);
-  const referralLink = `${window.location.origin}?ref=${address}`; // Replace with actual referral link
+  const [referralLink, setReferralLink] = useState('');
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  useEffect(() => {
+    // Generate referral link only on client-side
+    if (typeof window !== 'undefined' && address) {
+      setReferralLink(`${window.location.origin}?ref=${address}`);
+    }
+  }, [address]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
   };
 
   const tiers = [
@@ -105,6 +116,7 @@ export default function ReferralPage() {
         </div>
       </section>
 
+      {/* Rest of the component remains the same */}
       {/* Tiers Section */}
       <section className="py-20 relative">
         <div className="container max-w-7xl mx-auto px-4">
@@ -140,62 +152,6 @@ export default function ReferralPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 relative">
-        <div className="container max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 md:p-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <h2 className="text-3xl lg:text-4xl font-bold text-white">
-                  How the
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">
-                    {" "}Program Works
-                  </span>
-                </h2>
-                <div className="space-y-8">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                      1
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">Share Your Link</h3>
-                      <p className="text-gray-300">Copy your unique referral link and share it with friends</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                      2
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">Friends Join & Stake</h3>
-                      <p className="text-gray-300">When they join and stake through your link, you earn rewards</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                      3
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">Earn Multi-Level Rewards</h3>
-                      <p className="text-gray-300">Get rewards from their referrals too - up to 3 levels deep</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="relative">
-                <Image
-                  src="/herow.jpg"
-                  alt="How it works"
-                  width={500}
-                  height={400}
-                  className="rounded-2xl"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </section>

@@ -371,7 +371,7 @@ const StakingPlatform = () => {
                       </div>
                     ) : isApprovingUSDT || isApprovingAGX ? 'Approving...' : 
                        isStaking ? 'Staking...' : 
-                       approvalStatus.usdt && approvalStatus.agx ? 'Stake' : 'Approve & Stake'}
+                       approvalStatus.usdt && approvalStatus.agx ? 'Stake' : 'Approve '}
                   </button>
                   <button
                     onClick={handleClaim}
