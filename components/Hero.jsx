@@ -43,7 +43,7 @@ const HeroSection = () => {
                 </Link>
                 
                 <Link
-                  href="/apply"
+                  href="/referral"
                   className="group inline-flex items-center px-8 py-4 border-2 border-white/80 text-white rounded-full hover:bg-white hover:text-green-600 transition-all duration-300"
                 >
                   <LuNotebookPen className="text-2xl mr-2 group-hover:scale-110 transition-transform" />

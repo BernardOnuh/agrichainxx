@@ -2,6 +2,7 @@ import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay, EffectCards } from 'swiper/modules';
 import { CreditCard, Rocket, Coins, Repeat } from 'lucide-react';
+import Link from 'next/link';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-cards';
@@ -11,22 +12,26 @@ const ProductsSection = () => {
     { 
       title: 'Payments', 
       icon: CreditCard,
-      description: 'Fast and secure transactions'
+      description: 'Fast and secure transactions',
+      link:'/staking'
     },
     { 
       title: 'Launchpool', 
       icon: Rocket,
-      description: 'Early access to new projects'
+      description: 'Early access to new projects',
+      link:'/staking'
     },
     { 
       title: 'Staking', 
       icon: Coins,
-      description: 'Earn passive rewards'
+      description: 'Earn passive rewards',
+      link:'/staking'
     },
     { 
       title: 'Swap', 
       icon: Repeat,
-      description: 'Instant token exchanges'
+      description: 'Instant token exchanges',
+      link:'/swap'
     }
   ];
 
@@ -85,6 +90,7 @@ const ProductsSection = () => {
           >
             {productCards.map((card, index) => (
               <SwiperSlide key={index}>
+                <Link href={card.link}>
                 <div className="group h-full">
                   <div className="card bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 h-full 
                                 transform transition-all duration-300 hover:scale-105 hover:shadow-xl
@@ -113,6 +119,7 @@ const ProductsSection = () => {
                     </div>
                   </div>
                 </div>
+                </Link>
               </SwiperSlide>
             ))}
           </Swiper>
@@ -179,7 +186,7 @@ const ProductsSection = () => {
                           <span>150 Days Duration</span>
                         </div>
                       </div>
-
+                      <Link href='/staking'>
                       <button className="w-full mt-6 bg-gradient-to-r from-green-600 to-green-500 text-white 
                                        px-6 py-3 rounded-xl font-bold text-lg shadow-lg
                                        hover:from-green-700 hover:to-green-600
@@ -187,6 +194,7 @@ const ProductsSection = () => {
                                        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                         Stake Now
                       </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
