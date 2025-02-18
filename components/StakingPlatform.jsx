@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { stakingABI } from './abi';
-import { Lock, Users, Gift, ArrowDown, Clock, Copy } from 'lucide-react';
+import { Lock, Users, Gift, ArrowDown, Clock, Copy, Info, HelpCircle, Calendar, Percent, X } from 'lucide-react';
 import { erc20ABI } from './erc20ABI';
 import { useSearchParams } from 'next/navigation';
 
@@ -13,7 +13,53 @@ const AGX_TO_USDT_RATIO = 1000;
 const MIN_AGX = 10000;
 const MIN_USDT = 10;
 
+const Modal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-gray-900 rounded-xl max-w-lg w-full m-4 p-6 z-10">
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const CustomAlert = ({ title, children, type = 'info' }) => {
+  const bgColors = {
+    info: 'bg-green-500/10 border-green-500/20',
+    error: 'bg-red-500/10 border-red-500/20',
+    success: 'bg-green-500/10 border-green-500/20'
+  };
+
+  const textColors = {
+    info: 'text-green-500',
+    error: 'text-red-500',
+    success: 'text-green-500'
+  };
+
+  return (
+    <div className={`p-4 rounded-xl border ${bgColors[type]} mb-6`}>
+      <div className={`flex items-center gap-2 font-semibold ${textColors[type]}`}>
+        <Gift className="w-4 h-4" />
+        {title}
+      </div>
+      <div className="mt-1 text-gray-300">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const StakingPlatform = () => {
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const { address } = useAccount();
   const searchParams = useSearchParams();
   const [agxAmount, setAgxAmount] = useState('');
@@ -302,25 +348,73 @@ const StakingPlatform = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black font-poppins">
+      <CustomAlert title="Welcome to AGX/USDT Staking">
+        Earn 2% daily rewards over 150 days. Stake your AGX tokens with USDT to earn USDT rewards.
+        Minimum stake: {MIN_AGX} AGX with ${MIN_USDT} USDT equivalent
+      </CustomAlert>
+
       {error && (
-        <div className="bg-red-500 text-white p-4 text-center">
+        <CustomAlert title="Error" type="error">
           {error}
-        </div>
+        </CustomAlert>
       )}
 
       {isStakingSuccess && (
-        <div className="bg-green-500 text-white p-4 text-center">
-          Congratulations! You've successfully staked.
-        </div>
+        <CustomAlert title="Success" type="success">
+          Congratulations! You've successfully staked your tokens.
+        </CustomAlert>
       )}
 
-      <div className="container mx-auto px-4 py-12 pb-16">
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        <div className="text-white">
+          <h2 className="text-xl font-bold mb-4">Staking Rewards Information</h2>
+          <div className="space-y-4">
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
+                <Percent className="w-4 h-4" /> Daily Rewards
+              </h3>
+              <p className="text-gray-300">Earn 2% of your staked amount daily in USDT rewards.</p>
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
+                <Calendar className="w-4 h-4" /> Reward Period
+              </h3>
+              <p className="text-gray-300">Program runs for 150 days, allowing you to earn back your full investment plus additional rewards.</p>
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
+                <Gift className="w-4 h-4" /> Total Return
+              </h3>
+              <p className="text-gray-300">Over the 150-day period, you can earn up to 300% of your initial stake.</p>
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
+                <Clock className="w-4 h-4" /> Claim Schedule
+              </h3>
+              <p className="text-gray-300">Rewards can be claimed every 6 days, accumulating at 2% daily.</p>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <div className="container mx-auto px-4 py-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Staking Card */}
           <div className="lg:col-span-2">
             <div className="bg-gray-900 rounded-3xl p-6 md:p-8 border border-gray-800">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-white">Stake AGX/USDT</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold text-white">Stake AGX/USDT</h2>
+                  <button 
+                    onClick={() => setIsInfoModalOpen(true)}
+                    className="bg-green-500/10 hover:bg-green-500/20 text-green-500 p-2 rounded-full transition-colors"
+                  >
+                    <Info className="w-5 h-5" />
+                  </button>
+                </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-400">Your AGX Balance</p>
                   <p className="text-lg font-semibold text-green-500">
@@ -329,7 +423,6 @@ const StakingPlatform = () => {
                 </div>
               </div>
 
-              {/* Staking Form */}
               <div className="space-y-6">
                 <div className="space-y-2">
                   <input
