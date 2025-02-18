@@ -394,7 +394,7 @@ const StakingPlatform = () => {
               <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> Claim Schedule
               </h3>
-              <p className="text-gray-300">Rewards can be claimed every 6 days after initial stake,Then accumulating and claiming daily at 2% daily.</p>
+              <p className="text-gray-300">Rewards can be claimed 6 days after initial stake,Then accumulating and claiming daily at 2% daily.</p>
             </div>
           </div>
         </div>
@@ -429,7 +429,7 @@ const StakingPlatform = () => {
                     type="number"
                     value={agxAmount}
                     onChange={handleAgxInputChange}
-                    placeholder={`Enter amount of AGX to stake (Min: ${MIN_AGX} AGX)`}
+                    placeholder={`Enter 10,000 AGX or Greater (Min: ${MIN_AGX} AGX)`}
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                   
