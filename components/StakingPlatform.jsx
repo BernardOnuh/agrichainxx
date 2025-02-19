@@ -33,8 +33,8 @@ const StakingPlan = ({ plan, onSelect, isSelected }) => {
           : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
       }`}
     >
-      <div className="text-lg font-semibold">${plan.display.usdt} USDT</div>
-      <div className="text-sm opacity-80">{plan.display.agx.toLocaleString()} AGX</div>
+      <div className="text-lg font-semibold">${plan.display.usdt}</div>
+      <div className="text-sm opacity-80">{plan.actual.agx.toLocaleString()} AGX/{plan.actual.usdt}USDT</div>
     </button>
   );
 };
