@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
 import { Rocket, LineChart, Coins, Gift, Users, Star, Wallet, Share2, TrendingUp, Award } from 'lucide-react';
+
+const CONTRACT_ADDRESS = "0x0624034Bea7f21C9ba5668092Da4d7389B34363D";
 
 const StatCounter = ({ end, title, prefix = '', gradient }) => {
   const [count, setCount] = useState(0);
@@ -27,7 +31,6 @@ const StatCounter = ({ end, title, prefix = '', gradient }) => {
   return (
     <div className="group relative p-6 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800
                     transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
-      {/* Gradient border effect */}
       <div className={`absolute inset-0 bg-gradient-to-r ${gradient} rounded-2xl opacity-0 
                       group-hover:opacity-100 blur transition-opacity duration-300`} />
       
@@ -42,37 +45,67 @@ const StatCounter = ({ end, title, prefix = '', gradient }) => {
   );
 };
 
-const BenefitCard = ({ icon: Icon, text, gradient }) => (
-  <div className="group relative">
-    {/* Animated background */}
-    <div className={`absolute inset-0 bg-gradient-to-r ${gradient} rounded-2xl opacity-0 
-                    group-hover:opacity-100 blur transition-opacity duration-300`} />
-    
-    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6
-                    transform transition-all duration-500 hover:translate-y-[-4px]
-                    border border-gray-800 group-hover:border-gray-700">
-      <div className="flex items-start gap-4">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 rounded-xl 
-                         opacity-20 group-hover:opacity-30 transition-opacity duration-300 blur" />
-          <div className="relative p-3 bg-gray-800 rounded-xl group-hover:bg-gray-700 
-                         transform transition-all duration-300 group-hover:rotate-6">
-            <Icon className="w-6 h-6 text-green-400 transform transition-transform duration-300 
-                           group-hover:scale-110" />
-          </div>
-        </div>
-        <p className="font-poppins text-gray-300 text-base leading-relaxed 
-                     group-hover:text-white transition-colors duration-300">{text}</p>
-      </div>
-    </div>
-  </div>
-);
-
 const StatsAndBenefits = () => {
+  // Read contract data
+  const { data: totalStakers } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: [{
+      name: 'totalStakers',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [{ type: 'uint256' }]
+    }],
+    functionName: 'totalStakers',
+    watch: true,
+  });
+
+  const { data: totalStaked } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: [{
+      name: 'totalStaked',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [{ type: 'uint256' }]
+    }],
+    functionName: 'totalStaked',
+    watch: true,
+  });
+
+  const { data: totalEarnings } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: [{
+      name: 'totalEarnings',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [{ type: 'uint256' }]
+    }],
+    functionName: 'totalEarnings',
+    watch: true,
+  });
+
+  // Convert contract data to display format
   const stats = [
-    { title: 'Number of Users', end: 3897, prefix: '', gradient: 'from-blue-600/20 to-purple-600/20' },
-    { title: 'Total Funds Invested', end: 4000000, prefix: '$', gradient: 'from-green-600/20 to-emerald-600/20' },
-    { title: 'Total Earnings', end: 1200000, prefix: '$', gradient: 'from-pink-600/20 to-rose-600/20' }
+    { 
+      title: 'Number of Users', 
+      end: totalStakers ? Number(totalStakers) : 0, 
+      prefix: '', 
+      gradient: 'from-blue-600/20 to-purple-600/20' 
+    },
+    { 
+      title: 'Total Funds Invested', 
+      end: totalStaked ? Number(formatEther(totalStaked)*2) : 0, 
+      prefix: '$', 
+      gradient: 'from-green-600/20 to-emerald-600/20' 
+    },
+    { 
+      title: 'Total Earnings', 
+      end: totalEarnings ? Number(formatEther(totalEarnings)) : 0, 
+      prefix: '$', 
+      gradient: 'from-pink-600/20 to-rose-600/20' 
+    }
   ];
 
   const benefits = [
@@ -84,7 +117,7 @@ const StatsAndBenefits = () => {
     { icon: Star, text: "Early access to services", gradient: "from-indigo-600/20 to-violet-600/20" },
     { icon: Share2, text: "Referral system", gradient: "from-teal-600/20 to-green-600/20" },
     { icon: Users, text: "Participation in community development", gradient: "from-orange-600/20 to-red-600/20" }
-  ];
+  ]; 
 
   return (
     <div className="relative bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 font-poppins">
