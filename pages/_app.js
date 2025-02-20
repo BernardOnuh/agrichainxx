@@ -16,8 +16,8 @@ const poppins = Poppins({
 });
 
 const config = getDefaultConfig({
-  appName: 'RainbowKit demo',
-  projectId: 'YOUR_PROJECT_ID',
+  appName: 'Agrichainx',
+  projectId: 'dd64c1982716b41ec2a37cbc9da97428',
   chains: [bsc],
   transports: {
     [bsc.id]: http(),
