@@ -7,20 +7,20 @@ const Footer = () => {
   const socialLinks = [
     { 
       icon: Facebook, 
-      href: 'https://facebook.com/agrichainx',
+      href: 'https://www.facebook.com/share/1AE3WAd7FQ/',
       hoverColor: 'hover:bg-blue-600',
       label: 'Follow us on Facebook'
     },
     
     { 
       icon: Twitter, 
-      href: 'https://twitter.com/agrichainx',
+      href: 'https://x.com/agrichainx2022',
       hoverColor: 'hover:bg-blue-400',
       label: 'Follow us on X (Twitter)'
     },
     { 
       icon: Send, 
-      href: 'https://t.me/agrichainx',
+      href: 'https://t.me/agrichainxofficial',
       hoverColor: 'hover:bg-blue-500',
       label: 'Join our Telegram'
     }
