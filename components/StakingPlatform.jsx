@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { stakingABI } from './abi';
 import { Lock, Users, Gift, ArrowDown, Clock, Copy, Info, HelpCircle, Calendar, Percent, X } from 'lucide-react';
 import { erc20ABI } from './erc20ABI';
 import { useSearchParams } from 'next/navigation';
+import { bsc } from 'wagmi/chains';
 
 const CONTRACT_ADDRESS = "0x0624034Bea7f21C9ba5668092Da4d7389B34363D";
 const USDT_ADDRESS = "0x55d398326f99059ff775485246999027b3197955";
@@ -13,7 +14,6 @@ const AGX_TO_USDT_RATIO = 1000;
 const MIN_AGX = 10000;
 const MIN_USDT = 10;
 
-// Updated staking plans with display and actual values
 const STAKING_PLANS = [
   { display: { usdt: 20, agx: 20000 }, actual: { usdt: 10, agx: 10000 } },
   { display: { usdt: 50, agx: 50000 }, actual: { usdt: 25, agx: 25000 } },
@@ -85,12 +85,16 @@ const CustomAlert = ({ title, children, type = 'info' }) => {
 };
 
 const StakingPlatform = () => {
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  // Move chain-related hooks inside the component
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const [isWrongNetwork, setIsWrongNetwork] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(STAKING_PLANS[0]);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const { address } = useAccount();
   const searchParams = useSearchParams();
-  const [agxAmount, setAgxAmount] = useState('');
-  const [usdtEquivalent, setUsdtEquivalent] = useState('0');
+  const [agxAmount, setAgxAmount] = useState(STAKING_PLANS[0].actual.agx.toString());
+  const [usdtEquivalent, setUsdtEquivalent] = useState(STAKING_PLANS[0].actual.usdt.toString());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [approvalStatus, setApprovalStatus] = useState({
@@ -435,7 +439,22 @@ const StakingPlatform = () => {
     }
   };
 
+  useEffect(() => {
+    if (chainId && chainId !== bsc.id) {
+      setIsWrongNetwork(true);
+      // Attempt to switch to BSC
+      switchChain({ chainId: bsc.id });
+    } else {
+      setIsWrongNetwork(false);
+    }
+  }, [chainId, switchChain]);
+
+  // Disable interactions if on wrong network
+  const isInteractionDisabled = !address || isWrongNetwork;
+
+  // Update the getButtonText function
   const getButtonText = () => {
+    if (isWrongNetwork) return 'Switch to BSC Network';
     if (loading) {
       return (
         <div className="flex items-center justify-center">
@@ -453,26 +472,31 @@ const StakingPlatform = () => {
     return 'Stake';
   };
 
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black font-poppins">
       <CustomAlert title="Welcome to AGX/USDT Staking">
         Earn 2% daily rewards over 150 days. Stake your AGX tokens with USDT to earn USDT rewards.
         Select a staking plan to begin earning rewards.
       </CustomAlert>
-  
+
       {error && (
         <CustomAlert title="Error" type="error">
           {error}
         </CustomAlert>
       )}
-  
+
       {isStakingSuccess && (
         <CustomAlert title="Success" type="success">
           Congratulations! You've successfully staked your tokens.
         </CustomAlert>
       )}
-  
+
+      {isWrongNetwork && (
+        <CustomAlert title="Wrong Network" type="error">
+          Please switch to the Binance Smart Chain network to use this platform.
+        </CustomAlert>
+      )}
+
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         <div className="text-white">
           <h2 className="text-xl font-bold mb-4">Staking Rewards Information</h2>
@@ -483,14 +507,14 @@ const StakingPlatform = () => {
               </h3>
               <p className="text-gray-300">Earn 2% of your staked amount daily in USDT rewards.</p>
             </div>
-  
+
             <div className="bg-gray-800 p-4 rounded-lg">
               <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" /> Reward Period
               </h3>
               <p className="text-gray-300">Program runs for 150 days, allowing you to earn back your full investment plus additional rewards.</p>
             </div>
-  
+
             <div className="bg-gray-800 p-4 rounded-lg">
               <h3 className="text-green-500 font-semibold mb-2 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> Claim Schedule
@@ -500,7 +524,7 @@ const StakingPlatform = () => {
           </div>
         </div>
       </Modal>
-  
+
       <div className="container mx-auto px-4 py-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
@@ -522,56 +546,57 @@ const StakingPlatform = () => {
                   </p>
                 </div>
               </div>
-  
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                {STAKING_PLANS.map((plan) => (
+                {STAKING_PLANS.map((plan, index) => (
                   <StakingPlan
-                    key={plan.usdt}
+                    key={index}
                     plan={plan}
                     onSelect={setSelectedPlan}
-                    isSelected={selectedPlan?.usdt === plan.usdt}
+                    isSelected={selectedPlan?.display.usdt === plan.display.usdt}
                   />
                 ))}
               </div>
-  
+
               {selectedPlan && (
-               <div className="space-y-6">
-               <div className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white">
-                 <div className="flex justify-between items-center">
-                   <span className="text-gray-400">Selected Plan:</span>
-                   <span className="font-semibold">
-                     ${selectedPlan.actual.usdt} USDT / {selectedPlan.actual.agx.toLocaleString()} AGX
-                   </span>
-                 </div>
-               </div>
+                <div className="space-y-6">
+                  <div className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Selected Plan:</span>
+                      <span className="font-semibold">
+                        ${selectedPlan.actual.usdt} USDT / {selectedPlan.actual.agx.toLocaleString()} AGX
+                      </span>
+                    </div>
+                  </div>
+
                   {referrerAddress !== '0x0000000000000000000000000000000000000000' && (
                     <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
                       <p className="text-gray-400">Referrer:</p>
                       <p className="text-white truncate">{referrerAddress}</p>
                     </div>
                   )}
-  
-                 <div className="flex gap-4">
-                <button
-                  onClick={continueTransaction}
-                  disabled={loading || isApprovingUSDT || isApprovingAGX || isStaking || !selectedPlan}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
-                >
-                  {getButtonText()}
-                </button>
-                <button
-                  onClick={handleClaim}
-                  disabled={loading || isClaiming || !canClaim}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
-                >
-                  {getClaimButtonText()}
-                </button>
-              </div>
-            </div>
+
+                  <div className="flex gap-4">
+                    <button
+                      onClick={isWrongNetwork ? () => switchChain({ chainId: bsc.id }) : continueTransaction}
+                      disabled={loading || isApprovingUSDT || isApprovingAGX || isStaking || !selectedPlan}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {getButtonText()}
+                    </button>
+                    <button
+                      onClick={handleClaim}
+                      disabled={isInteractionDisabled || loading || isClaiming || !canClaim}
+                      className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {getClaimButtonText()}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
-  
+
           <div className="space-y-6">
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
@@ -584,7 +609,7 @@ const StakingPlatform = () => {
                 <Lock className="text-green-500" />
               </div>
             </div>
-  
+
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
@@ -596,7 +621,7 @@ const StakingPlatform = () => {
                 <Gift className="text-green-500" />
               </div>
             </div>
-  
+
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
@@ -608,7 +633,7 @@ const StakingPlatform = () => {
                 <Clock className="text-green-500" />
               </div>
             </div>
-  
+
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>
@@ -620,7 +645,7 @@ const StakingPlatform = () => {
                 <Users className="text-green-500" />
               </div>
             </div>
-  
+
             <div className="bg-gray-900 rounded-3xl p-6 border border-gray-800">
               <div className="flex items-start justify-between">
                 <div>

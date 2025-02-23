@@ -1,7 +1,8 @@
 import "../styles/globals.css";
 import { Poppins } from 'next/font/google';
-import { PrivyProvider } from '@privy-io/react-auth';
-import { createConfig, WagmiProvider, http } from 'wagmi';
+import { useEffect, useState } from 'react';
+import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi/react';
+import { WagmiProvider } from 'wagmi';
 import { bsc } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
@@ -26,78 +27,66 @@ const bscChain = {
   },
 };
 
-// Configure wagmi with explicit BNB chain settings
-const config = createConfig({
-  chains: [bscChain],
-  transports: {
-    [bscChain.id]: http(bscChain.rpcUrls.default.http[0]),
-  },
+// Web3Modal configuration
+const projectId = 'YOUR_PROJECT_ID';
+
+const metadata = {
+  name: 'Your App Name',
+  description: 'Your App Description',
+  url: 'https://yourapp.com',
+  icons: ['https://yourapp.com/icon.png']
+};
+
+// Configure wagmi
+const chains = [bscChain];
+const wagmiConfig = defaultWagmiConfig({ 
+  chains, 
+  projectId, 
+  metadata,
+  enableWalletConnect: true,
+  enableInjected: true,
+  enableEIP6963: true,
 });
 
 // Create Query Client
 const queryClient = new QueryClient();
 
+// Wrapper component to handle client-side initialization
+function Web3ModalProvider({ children }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // Initialize Web3Modal on the client side
+    createWeb3Modal({
+      wagmiConfig,
+      projectId,
+      chains,
+      defaultChain: bscChain,
+      themeMode: 'light',
+      themeVariables: {
+        '--w3m-accent': '#22c55e',
+        '--w3m-font-family': 'var(--font-poppins)',
+      }
+    });
+    setReady(true);
+  }, []);
+
+  if (!ready) return null;
+
+  return children;
+}
+
 export default function App({ Component, pageProps }) {
   const router = useRouter();
 
-  // Handler for successful wallet connection
-  const handleSuccess = async () => {
-    try {
-      // Verify chain connection
-      const { getNetwork } = await import('@wagmi/core');
-      const network = await getNetwork();
-      
-      if (network.chain?.id !== bscChain.id) {
-        console.warn('Not connected to BSC. Please switch networks.');
-        return;
-      }
-      
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Error verifying chain connection:', error);
-    }
-  };
-
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <PrivyProvider
-          appId="cm7gjpxpq00jkomoae7hab47s"
-          config={{
-            loginMethods: ['email', 'wallet'],
-            appearance: {
-              theme: 'light',
-              accentColor: '#22c55e',
-            },
-            supportedChains: [{
-              chainId: 56,
-              name: 'BNB Smart Chain',
-              chainId_hex: '0x38',
-              namespace: 'eip155',
-              rpcUrls: {
-                default: {
-                  http: ['https://bsc-dataseed.binance.org']
-                }
-              },
-              nativeCurrency: {
-                name: 'BNB',
-                symbol: 'BNB',
-                decimals: 18
-              },
-              blockExplorerUrls: ['https://bscscan.com'],
-              iconUrls: ['https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png']
-            }],
-            defaultChain: {
-              chainId: 56,
-              name: 'BNB Smart Chain'
-            }
-          }}
-          onSuccess={handleSuccess}
-        >
+        <Web3ModalProvider>
           <main className={`${poppins.variable}`}>
             <Component {...pageProps} />
           </main>
-        </PrivyProvider>
+        </Web3ModalProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
