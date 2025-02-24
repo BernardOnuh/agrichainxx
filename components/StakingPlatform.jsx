@@ -137,7 +137,7 @@ const StakingPlan = ({ plan, onSelect, isSelected }) => {
       }`}
     >
       <div className="text-base md:text-lg font-semibold">${plan.display.usdt}</div>
-      <div className="text-xs md:text-sm opacity-80">{plan.display.agx.toLocaleString()} AGX/{plan.actual.usdt}USDT</div>
+      <div className="text-xs md:text-sm opacity-80">{plan.actual.agx.toLocaleString()} AGX/{plan.actual.usdt}USDT</div>
     </button>
   );
 };
