@@ -16,12 +16,12 @@ const MIN_USDT = 10;
 const STAKING_DURATION_DAYS = 150; // Based on stakingDuration constant
 
 const STAKING_PLANS = [
-  { display: { usdt: 20, agx: 20000 }, actual: { usdt: 10, agx: 10000 } },
-  { display: { usdt: 50, agx: 50000 }, actual: { usdt: 25, agx: 25000 } },
-  { display: { usdt: 100, agx: 100000 }, actual: { usdt: 50, agx: 50000 } },
-  { display: { usdt: 200, agx: 200000 }, actual: { usdt: 100, agx: 100000 } },
-  { display: { usdt: 500, agx: 500000 }, actual: { usdt: 250, agx: 250000 } },
-  { display: { usdt: 1000, agx: 1000000 }, actual: { usdt: 500, agx: 500000 } }
+  { display: { usdt: 20, agx: 20000 }, actual: { usdt: 20, agx: 10000 } },
+  { display: { usdt: 50, agx: 50000 }, actual: { usdt: 50, agx: 25000 } },
+  { display: { usdt: 100, agx: 100000 }, actual: { usdt: 100, agx: 50000 } },
+  { display: { usdt: 200, agx: 200000 }, actual: { usdt: 200, agx: 100000 } },
+  { display: { usdt: 500, agx: 500000 }, actual: { usdt: 500, agx: 250000 } },
+  { display: { usdt: 1000, agx: 1000000 }, actual: { usdt: 1000, agx: 500000 } }
 ];
 
 // Toast Notification Component
