@@ -24,7 +24,7 @@ const Navbar = () => {
     { href: '/referral', label: 'Referral', isExternal: false },
     { href: '/swap', label: 'Swap', isExternal: false },
     { href: '/', label: 'Earn', isExternal: false },
-    { href: 'mailto:agrichainx@gmail.com', label: 'Contact', isExternal: true }
+    { href: 'mailto:agrichainx@gmail.com', label: 'Contact', isExternal: false }
   ];
 
   const isActive = (href) => {

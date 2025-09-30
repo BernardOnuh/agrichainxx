@@ -41,7 +41,6 @@ const StyledConnectButton = () => {
       </button>
     );
   }
-
   const isWrongNetwork = chainId !== bsc.id;
 
   return (
